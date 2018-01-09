@@ -5,6 +5,7 @@ MAINTAINER Sebastian 'Nooke' Tannert <nooke@nooke.eu>
 # install base
 RUN apt-get update
 RUN apt-get install -y build-essential 
+RUN apt-get install g++ curl software-properties-common
 
 # add repos
 RUN add-apt-repository -y ppa:ondrej/php
@@ -12,7 +13,7 @@ RUN add-apt-repository -y ppa:ondrej/apache2
 RUN apt-get update
 
 # install stuff
-RUN apt-get install g++ curl software-properties-common libxml2-dev git apache2-utils libssl-dev sshfs
+RUN apt-get install libxml2-dev git apache2-utils libssl-dev sshfs
 
 # install node.js
 RUN curl -sL https://deb.nodesource.com/setup | bash -
