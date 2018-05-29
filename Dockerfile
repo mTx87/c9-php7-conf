@@ -72,24 +72,14 @@ RUN curl http://www.dotdeb.org/dotdeb.gpg | apt-key add -
 RUN apt-get update
 RUN apt-get install -y php7.0 php7.0-cli
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-RUN apt-get install -y python-setuptools
-RUN easy_install pip
-RUN pip install -U pip
-RUN pip install -U virtualenv
-RUN virtualenv --python=python2 /workspace/.c9/python2
-RUN source /workspace/.c9/python2/bin/activate
-RUN apt-get install -y python-dev
-RUN mkdir /tmp/codeintel
-RUN pip download -d /tmp/codeintel codeintel==0.9.3
-RUN cd /tmp/codeintel
-RUN tar xf CodeIntel-0.9.3.tar.gz
-RUN mv CodeIntel-0.9.3/SilverCity CodeIntel-0.9.3/silvercity
-RUN tar czf CodeIntel-0.9.3.tar.gz CodeIntel-0.9.3
-RUN pip install -U --no-index --find-links=/tmp/codeintel codeintel
+ADD c9.ide.language.codeintel.sh /tmp/c9.ide.language.codeintel.sh
+RUN chmod +x /tmp/c9.ide.language.codeintel.sh
+RUN /tmp/c9.ide.language.codeintel.sh
 
 # ------------------------------------------------------------------------------
 # Expose ports.
 EXPOSE 80
+EXPOSE 8686
 EXPOSE 3000
 
 # ------------------------------------------------------------------------------
