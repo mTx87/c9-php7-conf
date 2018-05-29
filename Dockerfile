@@ -57,7 +57,7 @@ RUN chmod +x -R apache-anywhere
 
 # ------------------------------------------------------------------------------
 # Add volumes
-RUN mkdir /workspace
+# RUN mkdir /workspace
 VOLUME /workspace
 
 # ------------------------------------------------------------------------------
