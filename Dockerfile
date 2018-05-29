@@ -2,6 +2,8 @@
 FROM ubuntu:16.04
 MAINTAINER Nooke <nooke@nooke.eu>
 
+ENV C9_USER c9
+ENV C9_PASSWORD cloud
 # Install Supervisor.
 RUN \
   apt-get update && \
@@ -48,6 +50,7 @@ RUN sed -i -e 's_127.0.0.1_0.0.0.0_g' /cloud9/configs/standalone.js
 
 # Add supervisord conf
 ADD conf/cloud9.conf /etc/supervisor/conf.d/
+RUN sed -i -e 's/username:password/${C9_USER}:${C9_PASSWORD}/g' /etc/supervisor/conf.d/cloud9.conf
 WORKDIR /opt/
 RUN git clone https://github.com/julianbrowne/apache-anywhere.git
 COPY conf/apache apache-anywhere/bin/apache
