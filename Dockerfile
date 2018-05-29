@@ -48,6 +48,12 @@ RUN sed -i -e 's_127.0.0.1_0.0.0.0_g' /cloud9/configs/standalone.js
 
 # Add supervisord conf
 ADD conf/cloud9.conf /etc/supervisor/conf.d/
+WORKDIR /opt/
+RUN git clone https://github.com/julianbrowne/apache-anywhere.git
+COPY conf/apache apache-anywhere/bin/apache
+COPY conf/httpd.conf apache-anywhere/config/httpd.conf
+COPY conf/Apache.run /workspace/.c9/runners/Apache.run
+RUN chmod +x -R apache-anywhere
 
 # ------------------------------------------------------------------------------
 # Add volumes
