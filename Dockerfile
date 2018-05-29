@@ -1,71 +1,88 @@
 # Pull base image.
-FROM kdelfour/supervisor-docker
+FROM ubuntu
 MAINTAINER Nooke <nooke@nooke.eu>
 
-# install base
+# Install Supervisor.
+RUN \
+  apt-get update && \
+  apt-get install -y supervisor && \
+  rm -rf /var/lib/apt/lists/* && \
+  sed -i 's/^\(\[supervisord\]\)$/\1\nnodaemon=true/' /etc/supervisor/supervisord.conf
+
+# Define mountable directories.
+VOLUME ["/etc/supervisor/conf.d"]
+
+# ------------------------------------------------------------------------------
+# Security changes
+# - Determine runlevel and services at startup [BOOT-5180]
+RUN update-rc.d supervisor defaults
+
+# - Check the output of apt-cache policy manually to determine why output is empty [KRNL-5788]
+RUN apt-get update | apt-get upgrade -y
+
+# - Install a PAM module for password strength testing like pam_cracklib or pam_passwdqc [AUTH-9262]
+RUN apt-get install libpam-cracklib -y
+RUN ln -s /lib/x86_64-linux-gnu/security/pam_cracklib.so /lib/security
+
+# Define working directory.
+WORKDIR /etc/supervisor/conf.d
+
+# ------------------------------------------------------------------------------
+# Install base
 RUN apt-get update
-RUN apt-get install -y build-essential g++ curl software-properties-common
+RUN apt-get install -y build-essential g++ curl libssl-dev apache2-utils git libxml2-dev sshfs
 
-# add repos
-RUN add-apt-repository -y ppa:ondrej/php
-RUN add-apt-repository -y ppa:ondrej/apache2
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E5267A6C
-RUN apt-get update
 
-# Install stuff
-RUN apt-get install -y libxml2-dev git apache2-utils libssl-dev sshfs
-
-# install node
-RUN curl -sL https://deb.nodesource.com/setup | bash -
+# Install Node.js
+RUN curl -sL https://deb.nodesource.com/setup_8.x | bash -
 RUN apt-get install -y nodejs
 
-# install cloud9
+
+# Install Cloud9
 RUN git clone https://github.com/c9/core.git /cloud9
 WORKDIR /cloud9
 RUN scripts/install-sdk.sh
 
 # Tweak standlone.js conf
-RUN sed -i -e 's_127.0.0.1_0.0.0.0_g' /cloud9/configs/standalone.js
+RUN sed -i -e 's_127.0.0.1_0.0.0.0_g' /cloud9/configs/standalone.js 
 
 # Add supervisord conf
 ADD conf/cloud9.conf /etc/supervisor/conf.d/
 
-# Install PHP7.2
-RUN apt-get install -qq php7.2-fpm php7.2-cli php7.2-common php7.2-json php7.2-opcache php7.2-mysql php7.2-phpdbg \
-php7.2-mbstring php7.2-gd php7.2-imap php7.2-ldap php7.2-pgsql php7.2-pspell php7.2-recode php7.2-tidy php7.2-dev \
-php7.2-intl php7.2-gd php7.2-curl php7.2-zip php7.2-xml
-
-# add volumes
+# ------------------------------------------------------------------------------
+# Add volumes
 RUN mkdir /workspace
 VOLUME /workspace
 
-# install apache + php
-RUN apt-get update
-RUN apt-get install -y apache2 php libapache2-mod-php
-
-# apache php stuff
-RUN apt-get install -y vim
-RUN a2enmod headers; a2enmod dir; service apache2 stop
-
-WORKDIR /opt/
-RUN git clone https://github.com/julianbrowne/apache-anywhere.git
-COPY conf/apache apache-anywhere/bin/apache
-COPY conf/httpd.conf apache-anywhere/config/httpd.conf
-COPY conf/Apache.run /workspace/.c9/runners/Apache.run
-RUN chmod +x -R apache-anywhere
-
-# add gulp
-RUN npm install -g gulp
-
-# add composer
-RUN curl -sS https://getcomposer.org/install | sudo php -- --install-dir=/usr/local/bin --filename=composer
-
-# clean up apt
+# ------------------------------------------------------------------------------
+# Clean up APT when done.
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-         
-# expose ports
+
+RUN echo 'deb http://packages.dotdeb.org jessie all' > /etc/apt/sources.list.d/dotdeb.list
+RUN curl http://www.dotdeb.org/dotdeb.gpg | apt-key add -
+RUN apt-get update
+RUN apt-get install -y php7.0 php7.0-cli
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+RUN apt-get install -y python-setuptools
+RUN easy_install pip
+RUN pip install -U pip
+RUN pip install -U virtualenv
+RUN virtualenv --python=python2 /workspace/.c9/python2
+RUN source /workspace/.c9/python2/bin/activate
+RUN apt-get install -y python-dev
+RUN mkdir /tmp/codeintel
+RUN pip download -d /tmp/codeintel codeintel==0.9.3
+RUN cd /tmp/codeintel
+RUN tar xf CodeIntel-0.9.3.tar.gz
+RUN mv CodeIntel-0.9.3/SilverCity CodeIntel-0.9.3/silvercity
+RUN tar czf CodeIntel-0.9.3.tar.gz CodeIntel-0.9.3
+RUN pip install -U --no-index --find-links=/tmp/codeintel codeintel
+
+# ------------------------------------------------------------------------------
+# Expose ports.
 EXPOSE 80
 EXPOSE 3000
 
-# start supervisor
-CMD ["supervisord", "-c" "/etc/supervisor/supervisord.conf"]
+# ------------------------------------------------------------------------------
+# Start supervisor, define default command.
+CMD ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
