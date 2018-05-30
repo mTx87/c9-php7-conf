@@ -4,6 +4,7 @@ MAINTAINER Nooke <nooke@nooke.eu>
 
 ENV C9_USER c9
 ENV C9_PASSWORD cloud
+
 # Install Supervisor.
 RUN \
   apt-get update && \
@@ -50,7 +51,6 @@ RUN sed -i -e 's_127.0.0.1_0.0.0.0_g' /cloud9/configs/standalone.js
 
 # Add supervisord conf
 ADD conf/cloud9.conf /etc/supervisor/conf.d/
-RUN sed -i -e 's/username:password/${C9_USER}:${C9_PASSWORD}/g' /etc/supervisor/conf.d/cloud9.conf
 WORKDIR /opt/
 RUN git clone https://github.com/julianbrowne/apache-anywhere.git
 COPY conf/apache apache-anywhere/bin/apache
@@ -63,9 +63,6 @@ RUN chmod +x -R apache-anywhere
 # RUN mkdir /workspace
 VOLUME /workspace
 
-# ------------------------------------------------------------------------------
-# Clean up APT when done.
-RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN echo 'deb http://packages.dotdeb.org jessie all' > /etc/apt/sources.list.d/dotdeb.list
 RUN curl http://www.dotdeb.org/dotdeb.gpg | apt-key add -
@@ -76,6 +73,12 @@ ADD c9.ide.language.codeintel.sh /tmp/c9.ide.language.codeintel.sh
 RUN chmod +x /tmp/c9.ide.language.codeintel.sh
 RUN /tmp/c9.ide.language.codeintel.sh
 
+ADD pw.sh /tmp/pw.sh
+RUN chmod +x /tmp/pw.sh
+RUN /tmp/pw.sh
+
+# Clean up APT when done.
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 # ------------------------------------------------------------------------------
 # Expose ports.
 EXPOSE 80
