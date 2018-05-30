@@ -49,6 +49,11 @@ RUN scripts/install-sdk.sh
 # Tweak standlone.js conf
 RUN sed -i -e 's_127.0.0.1_0.0.0.0_g' /cloud9/configs/standalone.js 
 
+# ------------------------------------------------------------------------------
+# Add volumes
+# RUN mkdir /workspace
+VOLUME /workspace
+
 # Add supervisord conf
 ADD conf/cloud9.conf /etc/supervisor/conf.d/
 WORKDIR /opt/
@@ -57,12 +62,6 @@ COPY conf/apache apache-anywhere/bin/apache
 COPY conf/httpd.conf apache-anywhere/config/httpd.conf
 COPY conf/Apache.run /workspace/.c9/runners/Apache.run
 RUN chmod +x -R apache-anywhere
-
-# ------------------------------------------------------------------------------
-# Add volumes
-# RUN mkdir /workspace
-VOLUME /workspace
-
 
 RUN echo 'deb http://packages.dotdeb.org jessie all' > /etc/apt/sources.list.d/dotdeb.list
 RUN curl http://www.dotdeb.org/dotdeb.gpg | apt-key add -
