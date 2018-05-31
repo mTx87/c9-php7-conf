@@ -72,9 +72,10 @@ ADD c9.ide.language.codeintel.sh /tmp/c9.ide.language.codeintel.sh
 RUN chmod +x /tmp/c9.ide.language.codeintel.sh
 RUN /tmp/c9.ide.language.codeintel.sh
 
-ADD pw.sh /tmp/pw.sh
-RUN chmod +x /tmp/pw.sh
-RUN /tmp/pw.sh
+RUN apt-get install -y vim
+
+# install mongodb driver
+RUN apt-get install -y php7.0-mongodb
 
 # Clean up APT when done.
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
